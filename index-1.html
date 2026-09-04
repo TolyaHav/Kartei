@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nomen-Verb-Kartei</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1B2430">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=PT+Serif:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E9E1C8; --paper-2:#DED3AE; --card:#F2ECD6;
+    --ink:#1B2430; --ink-soft:#4A5262; --line:#8B8362;
+    --red:#A32638; --gold:#A9791F; --green:#3F6B4A;
+    --font-serif:'PT Serif', Georgia, serif;
+    --font-mono:'Courier Prime','Courier New',monospace;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;background:var(--paper);background-image:radial-gradient(rgba(0,0,0,0.025) 1px, transparent 1px);background-size:3px 3px;color:var(--ink);font-family:var(--font-serif);min-height:100vh;display:flex;justify-content:center;padding:18px 12px 60px;}
+  .app{width:100%;max-width:460px;}
+  .head{display:flex;align-items:center;gap:14px;margin-bottom:16px;}
+  .stamp{flex:0 0 auto;width:52px;height:52px;border-radius:50%;border:2px dashed var(--red);display:flex;align-items:center;justify-content:center;transform:rotate(-8deg);color:var(--red);font-family:var(--font-mono);font-weight:700;font-size:13px;opacity:0.85;mix-blend-mode:multiply;}
+  .head h1{font-size:20px;margin:0;letter-spacing:0.5px;font-weight:700;}
+  .head p{margin:2px 0 0;font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);}
+  .stats{display:flex;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:9px 2px;margin-bottom:10px;font-family:var(--font-mono);font-size:12px;}
+  .stat{flex:1;text-align:center;border-left:1px solid var(--line);}
+  .stat:first-child{border-left:none;}
+  .stat b{display:block;font-size:15px;}
+  .stat span{color:var(--ink-soft);font-size:10px;}
+  .stage-row{display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);margin:0 0 14px;padding:0 2px;flex-wrap:wrap;gap:4px;}
+  .stage-row b{color:var(--ink);}
+
+  .mode-row{display:flex;gap:8px;margin-bottom:14px;}
+  .mode-btn{flex:1;font-family:var(--font-mono);font-size:11.5px;padding:9px 4px;background:var(--paper);border:1px solid var(--ink);color:var(--ink-soft);cursor:pointer;text-align:center;}
+  .mode-btn.active{background:var(--ink);color:var(--paper);border-color:var(--ink);}
+
+  .card{position:relative;background:var(--card);border:1px solid var(--ink);padding:26px 20px 20px 34px;margin-bottom:16px;box-shadow:4px 4px 0 rgba(27,36,48,0.08);}
+  .card::before{content:"";position:absolute;inset:5px;border:1px solid var(--line);pointer-events:none;}
+  .holes{position:absolute;left:12px;top:22px;bottom:22px;width:8px;display:flex;flex-direction:column;justify-content:space-between;}
+  .holes div{width:8px;height:8px;border-radius:50%;background:var(--paper);box-shadow:inset 0 1px 2px rgba(0,0,0,0.35);}
+  .card-label{font-family:var(--font-mono);font-size:10px;color:var(--ink-soft);letter-spacing:1px;margin-bottom:10px;}
+  .prompt-noun{font-family:var(--font-mono);font-size:11px;color:var(--ink-soft);letter-spacing:0.5px;margin-bottom:4px;}
+  .sentence{font-size:19px;line-height:1.5;margin-bottom:20px;}
+  .sentence.big-noun{font-size:26px;font-weight:700;}
+  .blank{display:inline-block;min-width:70px;border-bottom:2px dashed var(--ink-soft);text-align:center;padding:0 2px;}
+  .blank.filled{border-bottom-style:solid;font-weight:700;}
+  .blank.correct{color:var(--green);border-color:var(--green);}
+  .blank.wrong{color:var(--red);border-color:var(--red);}
+  .options{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px;}
+  .answer-input{grid-column:1/-1;font-family:var(--font-mono);font-size:16px;padding:12px 10px;border:1px solid var(--ink);background:var(--paper);color:var(--ink);}
+  .answer-input.correct{border-color:var(--green);color:var(--green);}
+  .answer-input.wrong{border-color:var(--red);color:var(--red);}
+  .check-btn{grid-column:1/-1;background:var(--ink);color:var(--paper);}
+  .check-btn:hover{background:var(--ink-soft);}
+  .opt{font-family:var(--font-mono);font-size:14px;background:var(--paper);border:1px solid var(--ink);padding:10px 6px;cursor:pointer;text-align:center;color:var(--ink);}
+  .opt:hover{background:var(--paper-2);}
+  .opt:disabled{cursor:default;}
+  .opt.right{background:var(--green);border-color:var(--green);color:var(--card);}
+  .opt.chosen-wrong{background:var(--red);border-color:var(--red);color:var(--card);}
+  .opt.dim{opacity:0.45;}
+  .feedback{font-family:var(--font-mono);font-size:12.5px;line-height:1.6;color:var(--ink-soft);min-height:18px;margin-bottom:14px;}
+  .feedback b{color:var(--ink);}
+  .next-btn{display:block;width:100%;font-family:var(--font-mono);font-size:13px;letter-spacing:0.5px;padding:12px;background:var(--ink);color:var(--paper);border:none;cursor:pointer;}
+  .next-btn:disabled{opacity:0.3;cursor:default;}
+  .next-btn:not(:disabled):hover{background:var(--ink-soft);}
+  .empty-msg{font-family:var(--font-mono);font-size:12.5px;color:var(--red);text-align:center;padding:20px 0;}
+
+  details{border-top:1px solid var(--line);padding-top:10px;font-family:var(--font-mono);}
+  summary{cursor:pointer;font-size:12.5px;letter-spacing:0.3px;color:var(--ink-soft);margin-bottom:8px;}
+  .panel-controls{display:flex;gap:6px;margin-bottom:8px;}
+  .panel-controls input[type=text]{flex:1;font-family:var(--font-mono);font-size:12px;padding:6px 8px;border:1px solid var(--line);background:var(--card);color:var(--ink);}
+  .panel-controls button{font-family:var(--font-mono);font-size:10.5px;padding:6px 8px;border:1px solid var(--ink);background:var(--paper);cursor:pointer;color:var(--ink-soft);}
+  .dossier-list{max-height:320px;overflow-y:auto;font-size:12px;}
+  .dossier-item{display:flex;align-items:center;gap:8px;padding:6px 4px;border-bottom:1px solid var(--paper-2);}
+  .dossier-item input{flex:0 0 auto;}
+  .dossier-item .txt{flex:1;line-height:1.3;}
+  .dossier-item .txt small{display:block;color:var(--ink-soft);font-size:10px;}
+  .badge{flex:0 0 auto;font-size:9px;padding:2px 5px;border:1px solid currentColor;white-space:nowrap;}
+  .b0{color:var(--ink-soft);} .b1{color:var(--ink);} .b2{color:var(--gold);} .b3{color:var(--red);}
+  .xmark{color:var(--red);font-weight:700;margin-right:2px;}
+  .reset{display:block;text-align:center;margin-top:18px;font-family:var(--font-mono);font-size:10.5px;color:var(--ink-soft);text-decoration:underline;cursor:pointer;background:none;border:none;}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="head">
+    <div class="stamp">N + V</div>
+    <div><h1>Nomen-Verb-Kartei</h1><p>Funktionsverbgefüge üben</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="statXp">0</b><span>XP</span></div>
+    <div class="stat"><b id="statStreak">0</b><span>Serie (Tage)</span></div>
+    <div class="stat"><b id="statTotal">0</b><span>Aktiv</span></div>
+  </div>
+  <div class="stage-row">
+    <span>Neu <b id="cNeu">0</b></span>
+    <span>Gelernt <b id="cLearned">0</b></span>
+    <span>Gemeistert <b id="cMastered">0</b></span>
+    <span>Unsterblich <b id="cImmortal">0</b></span>
+  </div>
+
+  <div class="mode-row">
+    <button class="mode-btn" id="modeAll">Alle Wörter</button>
+    <button class="mode-btn" id="modeMarked">Nur ✗ markierte</button>
+  </div>
+
+  <div class="card">
+    <div class="holes"><div></div><div></div><div></div></div>
+    <div class="card-label" id="cardLabel">KARTE —</div>
+    <div id="cardBody">
+      <div class="sentence" id="sentence"></div>
+    </div>
+    <div class="options" id="options"></div>
+    <div class="feedback" id="feedback"></div>
+    <button class="next-btn" id="nextBtn" disabled>Nächste Karte →</button>
+  </div>
+
+  <details open>
+    <summary>▸ Kartei verwalten — auswählen, was du üben willst</summary>
+    <div class="panel-controls">
+      <input type="text" id="searchBox" placeholder="Nomen suchen…">
+      <button id="selAll">Alle</button>
+      <button id="selNone">Keine</button>
+    </div>
+    <div class="panel-controls">
+      <button id="deselMarked">✗ Markierte abwählen</button>
+      <button id="selMarked">✗ Markierte auswählen</button>
+    </div>
+    <div class="dossier-list" id="dossier"></div>
+  </details>
+
+  <button class="reset" id="resetBtn">Fortschritt zurücksetzen</button>
+</div>
+
+<script>
+/* ---------- Premium items: full example sentences ---------- */
+const PREMIUM = [
+{n:"Entscheidung",i:"treffen",s:"Der Vorstand muss bis Freitag eine Entscheidung ___.",c:"treffen",d:["machen","nehmen","geben"],p:"eine Entscheidung treffen",m:"sich entscheiden"},
+{n:"Rücksicht",i:"nehmen",s:"Bitte ___ Sie Rücksicht auf die anderen Fahrgäste!",c:"nehmen",d:["machen","treffen","geben"],p:"Rücksicht nehmen (auf)",m:"rücksichtsvoll sein"},
+{n:"Kritik",i:"üben",s:"Der Kritiker will scharfe Kritik an dem neuen Gesetz ___.",c:"üben",d:["machen","nehmen","geben"],p:"Kritik üben (an)",m:"kritisieren"},
+{n:"Verfügung",i:"stehen",s:"Der Konferenzraum ___ ab 14 Uhr zur Verfügung.",c:"steht",d:["ist","hat","kommt"],p:"zur Verfügung stehen",m:"verfügbar sein"},
+{n:"Frage",i:"stellen",s:"Niemand darf seine Kompetenz in Frage ___.",c:"stellen",d:["setzen","legen","bringen"],p:"in Frage stellen",m:"bezweifeln"},
+{n:"Anspruch",i:"erheben",s:"Die Erben wollen Anspruch auf das gesamte Vermögen ___.",c:"erheben",d:["nehmen","machen","stellen"],p:"Anspruch erheben (auf)",m:"etwas fordern"},
+{n:"Abschied",i:"nehmen",s:"Am Bahnsteig ___ die Familie Abschied.",c:"nimmt",d:["macht","gibt","trifft"],p:"Abschied nehmen",m:"sich verabschieden"},
+{n:"Frage",i:"stellen",s:"Der Journalist will dem Minister eine unbequeme Frage ___.",c:"stellen",d:["machen","geben","nehmen"],p:"eine Frage stellen",m:"fragen"},
+{n:"Rat",i:"geben",s:"Der Anwalt möchte seinem Mandanten einen guten Rat ___.",c:"geben",d:["machen","stellen","nehmen"],p:"einen Rat geben",m:"raten"},
+{n:"Sport",i:"treiben",s:"Er ___ dreimal die Woche Sport.",c:"treibt",d:["macht","übt","nimmt"],p:"Sport treiben",m:"aktiv Sport machen"},
+{n:"Sprache",i:"bringen",s:"Der Betriebsrat will das Problem in der Sitzung zur Sprache ___.",c:"bringen",d:["stellen","nehmen","setzen"],p:"zur Sprache bringen",m:"ansprechen, besprechen"},
+{n:"Betracht",i:"ziehen",s:"Wir sollten auch andere Lösungen in Betracht ___.",c:"ziehen",d:["nehmen","stellen","bringen"],p:"in Betracht ziehen",m:"erwägen"},
+{n:"Beweis",i:"stellen",s:"Die Mannschaft will ihre Stärke unter Beweis ___.",c:"stellen",d:["bringen","setzen","legen"],p:"unter Beweis stellen",m:"beweisen"},
+{n:"Widerstand",i:"leisten",s:"Die Bevölkerung ___ dem Regime seit Monaten Widerstand.",c:"leistet",d:["macht","gibt","übt"],p:"Widerstand leisten",m:"sich widersetzen"},
+{n:"Verantwortung",i:"übernehmen",s:"Der Vorstand muss die volle Verantwortung ___.",c:"übernehmen",d:["nehmen","machen","stellen"],p:"Verantwortung übernehmen",m:"sich verantwortlich fühlen"},
+{n:"Kontakt",i:"aufnehmen",s:"Bitte ___ Sie mit uns Kontakt auf!",c:"nehmen",d:["machen","stellen","treffen"],p:"Kontakt aufnehmen (mit)",m:"sich in Verbindung setzen"},
+{n:"Einfluss",i:"nehmen",s:"Lobbyisten wollen Einfluss auf die Gesetzgebung ___.",c:"nehmen",d:["machen","geben","treffen"],p:"Einfluss nehmen (auf)",m:"beeinflussen"},
+{n:"Platz",i:"nehmen",s:"Die Gäste sollen am runden Tisch Platz ___.",c:"nehmen",d:["machen","stellen","treffen"],p:"Platz nehmen",m:"sich setzen"},
+{n:"Stellung",i:"nehmen",s:"Der Sprecher will nicht öffentlich Stellung ___.",c:"nehmen",d:["machen","geben","stellen"],p:"Stellung nehmen (zu)",m:"sich äußern"},
+{n:"Aufmerksamkeit",i:"schenken",s:"Die Lehrerin ___ jedem Kind besondere Aufmerksamkeit.",c:"schenkt",d:["gibt","macht","stellt"],p:"Aufmerksamkeit schenken",m:"beachten"},
+{n:"Anerkennung",i:"finden",s:"Ihre Arbeit ___ international große Anerkennung.",c:"findet",d:["bekommt","nimmt","macht"],p:"Anerkennung finden",m:"anerkannt werden"},
+{n:"Erfolg",i:"haben",s:"Das Start-up ___ großen Erfolg mit der neuen App.",c:"hat",d:["macht","nimmt","trifft"],p:"Erfolg haben",m:"erfolgreich sein"},
+{n:"Rolle",i:"spielen",s:"Geld ___ für ihn keine große Rolle.",c:"spielt",d:["macht","hat","nimmt"],p:"eine Rolle spielen",m:"wichtig sein"},
+{n:"Ausdruck",i:"bringen",s:"Der Dichter will seine Trauer im Gedicht zum Ausdruck ___.",c:"bringen",d:["stellen","setzen","nehmen"],p:"zum Ausdruck bringen",m:"ausdrücken"},
+{n:"Maßnahmen",i:"ergreifen",s:"Die Regierung muss drastische Maßnahmen gegen die Krise ___.",c:"ergreifen",d:["nehmen","machen","treffen"],p:"Maßnahmen ergreifen",m:"handeln"},
+{n:"Kraft",i:"treten",s:"Das neue Gesetz ___ am 1. Januar in Kraft.",c:"tritt",d:["kommt","geht","wird"],p:"in Kraft treten",m:"gültig werden"},
+{n:"Stillstand",i:"kommen",s:"Der Verkehr ___ wegen des Unfalls zum Stillstand.",c:"kommt",d:["geht","tritt","bringt"],p:"zum Stillstand kommen",m:"aufhören sich zu bewegen"},
+{n:"Gefahr",i:"laufen",s:"Wer zu schnell fährt, ___ Gefahr, einen Unfall zu bauen.",c:"läuft",d:["nimmt","macht","geht"],p:"Gefahr laufen",m:"riskieren"},
+{n:"Einsatz",i:"kommen",s:"Bei dem Konzert ___ neue Lichttechnik zum Einsatz.",c:"kommt",d:["tritt","geht","macht"],p:"zum Einsatz kommen",m:"verwendet werden"},
+{n:"Schwierigkeiten",i:"haben",s:"Viele Schüler ___ Schwierigkeiten mit der Grammatik.",c:"haben",d:["machen","nehmen","treffen"],p:"Schwierigkeiten haben (mit)",m:"Probleme haben"},
+{n:"Ausnahme",i:"machen",s:"Der Lehrer will heute eine Ausnahme ___.",c:"machen",d:["nehmen","stellen","geben"],p:"eine Ausnahme machen",m:"ausnahmsweise anders handeln"},
+{n:"Anlass",i:"geben",s:"Der Vorfall ___ Anlass zu heftigen Diskussionen.",c:"gibt",d:["macht","nimmt","stellt"],p:"Anlass geben (zu)",m:"verursachen"},
+{n:"Zweifel",i:"hegen",s:"Viele Experten ___ seit Jahren Zweifel an der Studie.",c:"hegen",d:["machen","nehmen","stellen"],p:"Zweifel hegen (an)",m:"zweifeln"},
+{n:"Rechnung",i:"tragen",s:"Der Plan muss den neuen Vorschriften Rechnung ___.",c:"tragen",d:["nehmen","machen","geben"],p:"Rechnung tragen",m:"berücksichtigen"},
+{n:"Kenntnis",i:"nehmen",s:"Bitte ___ Sie von den neuen Regeln Kenntnis!",c:"nehmen",d:["machen","geben","stellen"],p:"Kenntnis nehmen (von)",m:"etwas bemerken"},
+{n:"Anspruch",i:"nehmen",s:"Die Reparatur ___ mehrere Stunden in Anspruch.",c:"nimmt",d:["macht","stellt","gibt"],p:"in Anspruch nehmen",m:"nutzen, beanspruchen"},
+{n:"Druck",i:"ausüben",s:"Die Opposition will Druck auf die Regierung ___.",c:"ausüben",d:["machen","geben","nehmen"],p:"Druck ausüben (auf)",m:"unter Druck setzen"},
+{n:"Vertrauen",i:"schenken",s:"Die Kunden ___ der Marke ihr volles Vertrauen.",c:"schenken",d:["geben","machen","nehmen"],p:"Vertrauen schenken",m:"vertrauen"},
+{n:"Folgen",i:"haben",s:"Der Fehler ___ ernste Folgen für das Unternehmen.",c:"hat",d:["macht","nimmt","trifft"],p:"Folgen haben",m:"Konsequenzen haben"},
+{n:"Prüfung",i:"ablegen",s:"Sie will nächste Woche ihre Abschlussprüfung ___.",c:"ablegen",d:["machen","nehmen","treffen"],p:"eine Prüfung ablegen",m:"eine Prüfung machen"}
+].map((it,idx)=>({...it,id:"n"+idx}));
+
+/* ---------- Extra items: from LMU Funktionsverbgefüge-Liste (07/2005) ---------- */
+const EXTRA_RAW = [
+["Abhängigkeit","befinden","sich in Abhängigkeit befinden von jm","abhängig sein von jm",1],
+["Ablehnung","stoßen","auf Ablehnung stoßen","abgelehnt werden"],
+["Abmachung","treffen","eine Abmachung treffen (mit jm)","etwas abmachen / vereinbaren",1],
+["Absage","erteilen","jm eine Absage erteilen","jm absagen",1],
+["Abschied","nehmen","Abschied nehmen von jm","sich verabschieden von jm",1],
+["Abschied","nehmen","den/seinen Abschied nehmen","ein hohes Amt verlassen"],
+["Abschluss","bringen","etwas zum Abschluss bringen / führen","abschließen"],
+["Abschluss","kommen","zum Abschluss kommen","abgeschlossen werden"],
+["Abstand","nehmen","Abstand nehmen von etwas","etwas nicht tun, was man geplant hatte",1],
+["Acht","nehmen","sich in Acht nehmen vor jm/etwas","aufpassen, vorsichtig sein"],
+["Aktion","treten","in Aktion treten","aktiv werden"],
+["Anerkennung","finden","Anerkennung finden","anerkannt werden"],
+["Anfang","machen","einen/den Anfang machen","anfangen"],
+["Anklage","stehen","unter Anklage stehen","angeklagt sein"],
+["Anklage","erheben","Anklage erheben gegen jn","jn anklagen"],
+["Anklang","finden","Anklang finden","positiv aufgenommen werden"],
+["Anordnung","treffen","eine Anordnung treffen","etwas anordnen"],
+["Anschauung","gelangen","zu der Anschauung gelangen","sich eine Meinung bilden"],
+["Ansehen","gelangen","zu Ansehen gelangen","berühmt werden, Karriere machen"],
+["Ansicht","gelangen","zu der Ansicht gelangen","sich eine Meinung bilden"],
+["Anspruch","erheben","Anspruch erheben auf etwas","etwas beanspruchen"],
+["Anspruch","nehmen","etwas in Anspruch nehmen","etwas beanspruchen, nutzen",1],
+["Anstoß","nehmen","Anstoß nehmen an etwas","sich empören"],
+["Anstoß","erregen","Anstoß erregen (bei jm)","jemandes Gefühle verletzen"],
+["Anstrengungen","unternehmen","Anstrengungen unternehmen","sich anstrengen"],
+["Anteil","nehmen","Anteil nehmen (an js Problemen/Sorgen)","mitfühlen"],
+["Antrag","stellen","einen Antrag stellen","beantragen",1],
+["Antwort","geben","jm eine Antwort erteilen / geben","jm antworten",1],
+["Anwendung","finden","Anwendung finden","angewendet werden"],
+["Anwendung","kommen","zur Anwendung kommen","angewendet werden"],
+["Anwendung","bringen","etwas zur Anwendung bringen","etwas anwenden"],
+["Armut","geraten","in Armut (Not) geraten","arm werden",1],
+["Atem","sein","außer Atem sein","erschöpft sein"],
+["Auffassung","gelangen","zu der Auffassung gelangen","sich eine Meinung bilden"],
+["Aufgabe","stellen","eine Aufgabe stellen","jm etwas zu tun geben"],
+["Aufnahme","finden","(gute) Aufnahme finden","gut aufgenommen werden"],
+["Aufregung","versetzen","jn in Aufregung versetzen","jn aufregen"],
+["Aufregung","geraten","in Aufregung geraten","sich aufregen"],
+["Auftrag","geben","etwas in Auftrag geben","jn beauftragen",1],
+["Auftrag","geben","jm einen Auftrag geben / erteilen","jn beauftragen",1],
+["Auge","haben","etwas im Auge haben","planen, beobachten"],
+["Ausdruck","bringen","etwas zum Ausdruck bringen","etwas ausdrücken",1],
+["Ausdruck","kommen","zum Ausdruck kommen","ausgedrückt werden"],
+["Ausführung","kommen","zur Ausführung kommen","ausgeführt ('getan') werden"],
+["Ausführung","bringen","etwas zur Ausführung bringen","ausführen ('tun')"],
+["Ausführung","machen","Ausführungen machen","ausführen ('erklären')"],
+["Aussicht","stellen","etwas in Aussicht stellen","etwas als möglich ankündigen"],
+["Aussicht","stehen","in Aussicht stehen","möglich sein"],
+["Auswahl","stehen","zur (Aus)wahl stehen","(aus)wählen können",1],
+["Auswahl","treffen","eine Auswahl treffen","auswählen",1],
+["Auswahl","stehen","etwas zur Auswahl stehen","verschiedene Möglichkeiten anbieten"],
+["Bau","befinden","sich im Bau befinden","gebaut werden"],
+["Bau","sein","im Bau sein","gebaut werden"],
+["Beachtung","finden","Beachtung finden","beachtet werden"],
+["Beachtung","schenken","jm/etwas Beachtung schenken","jn/etwas beachten"],
+["Bedrängnis","geraten","in Bedrängnis geraten","in eine schwierige Situation kommen"],
+["Begriff","sein","im Begriff sein","anfangen, etwas zu tun"],
+["Beifall","finden","Beifall finden","positiv aufgenommen werden"],
+["Beitrag","leisten","einen Beitrag leisten zu etwas","beitragen zu etwas",1],
+["Beobachtung","anstellen","Beobachtungen anstellen","jn/etwas beobachten"],
+["Beobachtung","stehen","unter Beobachtung stehen","beobachtet werden"],
+["Beobachtung","machen","Beobachtungen machen","jn/etwas beobachten"],
+["Berechnungen","anstellen","Berechnungen anstellen","etwas berechnen (Mathematik)"],
+["Berücksichtigung","finden","Berücksichtigung finden","berücksichtigt werden"],
+["Beschwerde","erheben","Beschwerde erheben gegen jn/etwas","vor Gericht klagen"],
+["Beschwerde","einlegen","Beschwerde einlegen gegen jn/etwas","vor Gericht klagen",1],
+["Besitz","nehmen","etwas in Besitz nehmen","etwas erobern, in Anspruch nehmen"],
+["Betracht","ziehen","etwas in Betracht ziehen","etwas erwägen, überlegen",1],
+["Betracht","kommen","in Betracht kommen","berücksichtigt werden",1],
+["Betrieb","nehmen","etwas in Betrieb nehmen / setzen","eine Maschine erstmals starten"],
+["Bewegung","setzen","etwas in Bewegung setzen / versetzen","etwas bewegen"],
+["Bewegung","kommen","in Bewegung kommen / geraten","sich bewegen"],
+["Beweis","führen","einen Beweis führen","etwas beweisen"],
+["Beweis","stellen","etwas unter Beweis stellen","etwas beweisen",1],
+["Bezug","nehmen","Bezug nehmen auf jn/etwas","sich beziehen auf jn/etwas",1],
+["Debatte","stehen","zur Debatte stehen","debattiert werden"],
+["Debatte","stellen","etwas zur Debatte stellen","debattieren über etwas"],
+["Diskussion","stellen","etwas zur Diskussion stellen","diskutieren"],
+["Diskussion","stehen","zur Diskussion stehen","diskutiert werden"],
+["Druck","setzen","jn unter Druck setzen","Einfluss ausüben, bedrängen",1],
+["Druck","ausüben","Druck ausüben auf jn","Einfluss ausüben, bedrängen",1],
+["Druck","stehen","unter Druck stehen","im Stress sein",1],
+["Durchführung","gelangen","zur Durchführung gelangen","durchgeführt werden"],
+["Durchführung","bringen","etwas zur Durchführung bringen","durchführen"],
+["Durchführung","kommen","zur Durchführung kommen","durchgeführt werden"],
+["Echo","finden","ein breites Echo finden","beachtet werden"],
+["Eid","leisten","einen Eid leisten","etwas beeiden"],
+["Einblick","haben","Einblick haben / nehmen in etwas","hineinblicken"],
+["Eindruck","machen","Eindruck machen (auf jn)","jn beeindrucken",1],
+["Einfluss","stehen","unter (dem) Einfluss stehen","beeinflusst werden"],
+["Einfluss","ausüben","Einfluss ausüben / nehmen auf jn","jn beeinflussen"],
+["Einsatz","sein","im Einsatz sein","in Aktion sein",1],
+["Einsicht","gelangen","zur Einsicht gelangen","etwas einsehen"],
+["Einsicht","nehmen","Einsicht nehmen in etwas","ein Dokument einsehen"],
+["Einwilligung","geben","seine/die Einwilligung geben zu etwas","einwilligen in etwas",1],
+["Empfang","nehmen","jn in Empfang nehmen","jn empfangen"],
+["Ende","bringen","etwas zu Ende bringen / führen","etwas beenden",1],
+["Ende","kommen","zu Ende kommen","beendet werden",1],
+["Entscheidung","bringen","etwas zur/zu der Entscheidung bringen","etwas entscheiden"],
+["Entscheidung","treffen","eine Entscheidung treffen","sich entscheiden",1],
+["Entscheidung","kommen","zur/zu der Entscheidung gelangen / kommen","sich entscheiden für etwas"],
+["Entschluss","fassen","einen/den Entschluss fassen","sich entschließen zu etwas"],
+["Erfahrung","bringen","in Erfahrung bringen","eine Information herausbekommen"],
+["Erfüllung","gehen","in Erfüllung gehen","erfüllt werden"],
+["Erlaubnis","geben","jm die Erlaubnis geben / erteilen","jm etwas erlauben",1],
+["Erstaunen","geraten","in Erstaunen geraten","erstaunt werden"],
+["Erstaunen","versetzen","jn in Erstaunen versetzen","jn erstaunen"],
+["Erwägung","ziehen","etwas in Erwägung ziehen","etwas erwägen",1],
+["Fahrt","kommen","in Fahrt kommen","aktiv, lebendig werden"],
+["Fähigkeit","haben","die Fähigkeit besitzen / haben","fähig sein",1],
+["Flucht","ergreifen","die Flucht ergreifen","flüchten, fliehen"],
+["Folge","haben","etwas zur Folge haben","folgen aus etwas",1],
+["Folge","leisten","jm Folge leisten","jm folgen (gehorchen)"],
+["Folter","spannen","jn auf die Folter spannen","jn sehr gespannt machen"],
+["Forderung","erheben","eine Forderung erheben / stellen","etwas fordern"],
+["Foto","machen","ein Foto machen","fotografieren"],
+["Förderung","erhalten","eine Förderung erfahren / erhalten","gefördert werden"],
+["Frage","stellen","jm eine Frage stellen","jn fragen",1],
+["Frage","stellen","etwas in Frage stellen","etwas bezweifeln",1],
+["Frage","stehen","außer Frage stehen","keinen Zweifel zulassen",1],
+["Frage","kommen","in Frage kommen","relevant sein",1],
+["Gang","bringen","etwas in Gang bringen / setzen","etwas starten, beginnen"],
+["Gang","halten","etwas in Gang halten","etwas am Laufen halten"],
+["Gang","kommen","in Gang kommen","starten, beginnen"],
+["Gange","sein","im Gange sein","geschehen, passieren"],
+["Gebrauch","nehmen","etwas in Gebrauch nehmen","etwas gebrauchen"],
+["Gebrauch","sein","in Gebrauch sein","gebraucht werden"],
+["Gefahr","bringen","jn in Gefahr bringen","jn gefährden",1],
+["Gefahr","befinden","sich in Gefahr befinden","gefährdet sein",1],
+["Gefahr","schweben","in Gefahr schweben / sein","gefährdet sein"],
+["Gegensatz","stehen","im Gegensatz stehen zu jm/etwas","jm/etwas entgegenstehen",1],
+["Gehorsam","leisten","jm Gehorsam leisten","jm gehorchen"],
+["Gehör","finden","Gehör finden bei jm","verstanden, akzeptiert werden"],
+["Gesellschaft","leisten","jm Gesellschaft leisten","bei jm bleiben"],
+["Gespräch","führen","ein Gespräch führen mit jm","sprechen mit jm",1],
+["Glauben","schenken","jm Glauben schenken","jm glauben",1],
+["Gnade","finden","Gnade finden vor jm","akzeptiert, anerkannt werden"],
+["Haft","nehmen","jn in Haft nehmen","jn verhaften"],
+["Haft","setzen","jn in Haft setzen","jn inhaftieren, einsperren"],
+["Herrschaft","ausüben","Herrschaft ausüben über jn","herrschen über jn"],
+["Herstellung","kommen","zur Herstellung kommen","hergestellt werden"],
+["Herstellung","bringen","etwas zur Herstellung bringen","etwas herstellen"],
+["Hilfe","bringen","jm Hilfe bringen","jm helfen"],
+["Hilfe","leisten","jm Hilfe leisten","jm helfen",1],
+["Hoffnung","machen","sich Hoffnungen machen auf etwas","hoffen auf etwas",1],
+["Hoffnung","haben","die Hoffnung haben","hoffen auf etwas"],
+["Hut","nehmen","den/seinen Hut nehmen","ein hohes Amt verlassen"],
+["Initiative","ergreifen","die Initiative ergreifen","etwas mit Entschlusskraft beginnen",1],
+["Interesse","finden","Interesse finden an etwas","sich interessieren für etwas"],
+["Interesse","finden","Interesse finden","beachtet werden"],
+["Irrtum","befinden","sich im Irrtum befinden","sich irren"],
+["Irrtum","sein","im Irrtum sein","sich irren"],
+["Kauf","nehmen","etwas in Kauf nehmen","etwas hinnehmen müssen",1],
+["Kenntnis","setzen","jn von etwas in Kenntnis setzen","jn informieren über etwas",1],
+["Kenntnis","nehmen","etwas zur Kenntnis nehmen","etwas wahrnehmen, einsehen",1],
+["Kenntnis","bringen","etwas zur Kenntnis bringen","informieren über etwas"],
+["Klares","sein","sich im Klaren sein über etwas","sich bewusst sein über etwas"],
+["Kompromiss","schließen","einen Kompromiss schließen (mit jm)","sich durch Verhandlung einigen",1],
+["Konsequenz","ziehen","die Konsequenz ziehen","die Folgen einer Handlung tragen",1],
+["Korrektur","vornehmen","eine Korrektur vornehmen","etwas korrigieren"],
+["Kraft","treten","in Kraft treten","ein Gesetz wird gültig",1],
+["Kraft","setzen","in/außer Kraft setzen","anordnen, dass etwas gültig/ungültig wird",1],
+["Kritik","üben","Kritik üben an jm/etwas","jn/etwas kritisieren",1],
+["Kürzung","vornehmen","eine Kürzung vornehmen","etwas kürzen"],
+["Kuss","geben","jm einen Kuss geben","jn küssen"],
+["Lage","versetzen","sich in js Lage versetzen","sich vorstellen, man wäre ein anderer",1],
+["Last","fallen","jm zur Last fallen","jn immer mehr belasten",1],
+["Laufende","sein","auf dem Laufenden sein","aktuell informiert sein",1],
+["Leben","rufen","etwas ins Leben rufen","etwas gründen"],
+["Mangel","herrscht","es herrscht Mangel","fehlen",1],
+["Maßnahmen","durchführen","Maßnahmen durchführen","handeln",1],
+["Mode","sein","in Mode sein","modisch, aktuell sein"],
+["Nachricht","bringen","jm eine Nachricht bringen","jn benachrichtigen"],
+["Nachricht","erhalten","eine Nachricht erhalten von jm","benachrichtigt werden"],
+["Ordnung","bringen","etwas in Ordnung bringen","etwas ordnen",1],
+["Ordnung","halten","etwas in Ordnung halten","etwas sauber, ordentlich halten"],
+["Platz","nehmen","Platz nehmen","sich setzen"],
+["Produktion","bringen","etwas zur Produktion bringen","herstellen"],
+["Produktion","kommen","zur Produktion kommen","hergestellt werden"],
+["Protest","erheben","Protest erheben gegen jn/etwas","protestieren"],
+["Protokoll","führen","Protokoll führen","protokollieren",1],
+["Rat","geben","jm den/einen Rat erteilen / geben","raten",1],
+["Rat","ziehen","jn zu Rate ziehen","Rat und Hilfe beanspruchen",1],
+["Rechenschaft","ziehen","jn zur Rechenschaft ziehen","jn verantwortlich machen",1],
+["Rechnung","stellen","jm etwas in Rechnung stellen","berechnen, wie teuer etwas ist",1],
+["Recht","sein","im Recht sein","recht haben"],
+["Rede","halten","eine Rede halten","vor Publikum reden",1],
+["Rede","stellen","jn zur Rede stellen","jn zur Stellungnahme auffordern",1],
+["Respekt","genießen","Respekt genießen","respektiert werden"],
+["Rücksicht","nehmen","Rücksicht nehmen auf etwas","etwas berücksichtigen",1],
+["Rücksicht","nehmen","Rücksicht nehmen auf jn","die Interessen anderer berücksichtigen",1],
+["Schutz","nehmen","jn in Schutz nehmen","jn beschützen"],
+["Schutz","stehen","unter dem Schutz von jm stehen","beschützt werden"],
+["Schwung","kommen","in Schwung kommen","aktiv, lebendig werden"],
+["Sicht","sein","in Sicht sein","erwartet werden"],
+["Sorge","machen","sich Sorgen machen um jn/etwas","sich sorgen um jn/etwas",1],
+["Sprache","bringen","etwas zur Sprache bringen","etwas ansprechen",1],
+["Stelle","sein","zur Stelle sein","da sein, bereit sein"],
+["Stellung","nehmen","Stellung nehmen zu etwas","die eigene Position darlegen",1],
+["Sterben","liegen","im Sterben liegen","sterben (letzte Phase)"],
+["Strafe","stehen","unter Strafe stehen","verboten sein"],
+["Streik","befinden","sich im Streik befinden","streiken"],
+["Streik","treten","in Streik treten","anfangen zu streiken",1],
+["Streit","befinden","sich im Streit befinden","sich streiten"],
+["Streit","liegen","im Streit liegen","sich streiten"],
+["Suche","machen","sich auf die Suche machen nach jm/etwas","anfangen zu suchen",1],
+["Tat","schreiten","zur Tat schreiten","handeln"],
+["Trost","finden","Trost finden bei jm","getröstet werden"],
+["Übereinstimmung","befinden","sich in Übereinstimmung befinden mit jm","mit jm übereinstimmen"],
+["Überlegung","anstellen","Überlegungen anstellen","etwas überlegen"],
+["Überzeugung","gelangen","zur Überzeugung gelangen / kommen","sich eine eigene Meinung gebildet haben"],
+["Unterricht","geben","jm Unterricht erteilen / geben","jn unterrichten"],
+["Unterscheidung","treffen","eine Unterscheidung treffen (zwischen etwas)","unterscheiden zwischen etwas"],
+["Unterschied","machen","einen Unterschied machen (zwischen etwas)","unterscheiden zwischen etwas",1],
+["Unterstützung","finden","Unterstützung finden / genießen","unterstützt werden"],
+["Untersuchung","anstellen","Untersuchungen anstellen / durchführen","etwas untersuchen"],
+["Verabredung","treffen","eine Verabredung treffen (mit jm)","sich verabreden"],
+["Verantwortung","ziehen","jn zur Verantwortung ziehen","jn verantwortlich machen",1],
+["Verbesserung","vornehmen","eine Verbesserung durchführen / vornehmen","etwas verbessern"],
+["Verbindung","treten","in Verbindung treten mit jm","Kontakt aufnehmen mit jm",1],
+["Verbindung","setzen","sich in Verbindung setzen mit jm","Kontakt aufnehmen mit jm",1],
+["Verbindung","stehen","in Verbindung stehen mit jm","Kontakt haben mit jm",1],
+["Verbrechen","begehen","ein Verbrechen begehen","etwas Illegales tun"],
+["Verdacht","stehen","unter (in) Verdacht stehen","verdächtigt werden"],
+["Verdacht","schöpfen","Verdacht schöpfen","jn verdächtigen"],
+["Verdacht","geraten","in Verdacht geraten","verdächtigt werden"],
+["Verfügung","stehen","jm zur Verfügung stehen","verfügbar sein für jn",1],
+["Verfügung","haben","etwas zur Verfügung haben","verfügbar sein",1],
+["Verfügung","stellen","etwas zur Verfügung stellen","für andere bereitstellen",1],
+["Vergessenheit","geraten","in Vergessenheit geraten","vergessen werden"],
+["Verhandlung","stehen","in Verhandlungen stehen mit jm","mit jm verhandeln"],
+["Verhandlung","treten","in Verhandlungen treten mit jm","anfangen zu verhandeln"],
+["Verhandlung","kommen","zur Verhandlung kommen","verhandelt werden"],
+["Verlegenheit","geraten","in Verlegenheit geraten / kommen","verlegen werden"],
+["Verlegenheit","bringen","jn in Verlegenheit bringen","jn verlegen machen"],
+["Verruf","geraten","in Verruf geraten","einen negativen Ruf bekommen"],
+["Versprechen","geben","jm das Versprechen geben","jm etwas versprechen"],
+["Versprechen","halten","ein Versprechen halten","tun, was man versprochen hat"],
+["Verständnis","finden","Verständnis finden","verstanden, akzeptiert werden"],
+["Versteigerung","kommen","zur Versteigerung kommen","versteigert werden"],
+["Versteigerung","bringen","etwas zur Versteigerung bringen","etwas versteigern"],
+["Versuch","machen","den/einen Versuch machen / unternehmen","etwas versuchen"],
+["Vertrauen","schenken","jm sein Vertrauen schenken","jm vertrauen"],
+["Vertrauen","ziehen","jn ins Vertrauen ziehen","jm ein Geheimnis offenbaren"],
+["Verwendung","finden","Verwendung finden","verwendet werden"],
+["Verwirrung","bringen","jn in Verwirrung bringen / versetzen","jn verwirren"],
+["Verzicht","leisten","Verzicht leisten auf etwas","verzichten auf etwas"],
+["Verzweiflung","bringen","jn zur Verzweiflung bringen","jn extrem aufregen"],
+["Vorbereitung","treffen","Vorbereitungen treffen","sich/etwas vorbereiten",1],
+["Vorschein","kommen","zum Vorschein kommen","auftauchen, gefunden werden"],
+["Vorsorge","treffen","Vorsorge treffen für etwas","vorsorgen für etwas"],
+["Vorwurf","machen","jm einen Vorwurf machen","jm vorwerfen",1],
+["Vorwurf","erheben","einen Vorwurf erheben gegen jn","jm vorwerfen"],
+["Vorzug","geben","jm den Vorzug geben","jn vorziehen"],
+["Wahl","stehen","zur Wahl stehen","gewählt werden können",1],
+["Wahl","treffen","eine Wahl treffen","wählen",1],
+["Wettbewerb","stehen","in Wettbewerb stehen mit jm","konkurrieren mit jm"],
+["Widerspruch","stehen","in (im) Widerspruch stehen zu jm/etwas","widersprechen",1],
+["Widerspruch","erheben","Widerspruch erheben","widersprechen",1],
+["Widerspruch","einlegen","Widerspruch einlegen","ein juristisches Verfahren einleiten",1],
+["Wirkung","haben","eine Wirkung ausüben / haben","wirken",1],
+["Wort","melden","sich zu Wort melden","sich melden, um etwas zu sagen",1],
+["Wut","geraten","in Wut geraten","wütend werden"],
+["Zeug","legen","sich ins Zeug legen","sich engagieren, intensiv arbeiten"],
+["Zusammenhang","stehen","in Zusammenhang stehen mit etwas","zusammenhängen mit etwas"],
+["Zusicherung","geben","die/eine Zusicherung geben","jm etwas zusichern"],
+["Zustimmung","finden","Zustimmung finden / erfahren","jm/etwas zugestimmt werden"],
+["Zweifel","ziehen","etwas in Zweifel ziehen","etwas bezweifeln",1],
+["Zweifel","stehen","außer Zweifel stehen","nicht bezweifelt werden",1],
+];
+const ALT_VERBS = {
+  "Abschluss__bringen":"führen",
+  "Antwort__geben":"erteilen",
+  "Auftrag__geben":"erteilen",
+  "Betrieb__nehmen":"setzen",
+  "Bewegung__setzen":"versetzen",
+  "Bewegung__kommen":"geraten",
+  "Einblick__haben":"nehmen",
+  "Einfluss__ausüben":"nehmen",
+  "Ende__bringen":"führen",
+  "Entscheidung__kommen":"gelangen",
+  "Erlaubnis__geben":"erteilen",
+  "Fähigkeit__haben":"besitzen",
+  "Forderung__erheben":"stellen",
+  "Förderung__erhalten":"erfahren",
+  "Gang__bringen":"setzen",
+  "Gefahr__schweben":"sein",
+  "Rat__geben":"erteilen",
+  "Überzeugung__gelangen":"kommen",
+  "Unterricht__geben":"erteilen",
+  "Unterstützung__finden":"genießen",
+  "Untersuchung__anstellen":"durchführen",
+  "Verbesserung__vornehmen":"durchführen",
+  "Verlegenheit__geraten":"kommen",
+  "Versuch__machen":"unternehmen",
+  "Verwirrung__bringen":"versetzen",
+  "Wirkung__haben":"ausüben",
+  "Zustimmung__finden":"erfahren"
+};
+const EXTRA = EXTRA_RAW.map((r,idx)=>{
+  const alt = ALT_VERBS[r[0]+"__"+r[1]] || null;
+  return {id:"e"+idx,n:r[0],i:r[1],ph:r[2],m:r[3],x:!!r[4],i2:alt};
+});
+
+const ITEMS = [...PREMIUM, ...EXTRA];
+
+/* Only common, versatile Funktionsverben are used as wrong-answer options,
+   so distractors are always grammatically plausible — never an obvious
+   "that verb clearly doesn't fit" giveaway like rufen/laufen/spannen. */
+const CORE_VERBS = ["nehmen","machen","geben","stellen","bringen","treffen","ziehen",
+  "kommen","stehen","setzen","halten","leisten","finden","haben","erheben","treten",
+  "geraten","versetzen","schenken","üben","führen","erteilen","gelangen","fassen",
+  "schließen","vornehmen","ergreifen","befinden","sein","durchführen","anstellen",
+  "unternehmen","ausüben"];
+
+const OPTION_COUNT = 6;
+
+/* Detect the governing preposition of each phrase (in, an, auf, zu/zur/zum, unter,
+   außer, bei, vor, nach, mit, für, gegen, über, um, von, durch) so distractors can
+   be biased toward verbs that genuinely also combine with that same preposition
+   elsewhere in the list — real confusables instead of arbitrary picks. */
+const PREP_NORM = {"im":"in","zur":"zu","zum":"zu"};
+function detectPrep(ph){
+  const tokens = ph.replace(/[().]/g,' ').split(/\s+/);
+  const known = ["im","in","an","auf","zu","zur","zum","unter","außer","bei","vor","nach","mit","für","gegen","über","um","von","durch"];
+  for(const t of tokens){
+    const low=t.toLowerCase();
+    if(known.includes(low)) return PREP_NORM[low]||low;
+  }
+  return null;
+}
+ITEMS.forEach(it=>{ it.prep = detectPrep(it.p||it.ph||""); });
+
+const PREP_VERB_MAP = {};
+ITEMS.forEach(it=>{
+  if(!it.prep) return;
+  if(!PREP_VERB_MAP[it.prep]) PREP_VERB_MAP[it.prep]=new Set();
+  if(CORE_VERBS.includes(it.i)) PREP_VERB_MAP[it.prep].add(it.i);
+  if(it.i2 && CORE_VERBS.includes(it.i2)) PREP_VERB_MAP[it.prep].add(it.i2);
+});
+
+function pickRandom(count,picked,copy){
+  while(picked.length<count && copy.length){
+    const idx=Math.floor(Math.random()*copy.length);
+    picked.push(copy.splice(idx,1)[0]);
+  }
+  return picked;
+}
+
+/* item can be omitted for a plain random sample (backward compatible). */
+function sampleDistractors(correct,count,item){
+  const excl = Array.isArray(correct) ? correct : [correct];
+  const picked=[];
+  if(item && item.prep && PREP_VERB_MAP[item.prep]){
+    const nearMiss = [...PREP_VERB_MAP[item.prep]].filter(v=>!excl.includes(v));
+    pickRandom(count,picked,[...nearMiss]);
+  }
+  if(picked.length<count){
+    const rest = CORE_VERBS.filter(v=>!excl.includes(v) && !picked.includes(v));
+    pickRandom(count,picked,[...rest]);
+  }
+  return picked;
+}
+
+const STORAGE_KEY="nvv-progress";
+let state=null, current=null, answered=false;
+
+function todayStr(){return new Date().toISOString().slice(0,10);}
+
+function defaultState(){
+  const items={};
+  ITEMS.forEach(it=>items[it.id]={stage:0});
+  return {version:4,xp:0,dailyCount:0,dailyDate:todayStr(),streak:0,lastDate:null,items,disabled:{},filterMode:"all"};
+}
+
+const hasClaudeStorage = (typeof window!=="undefined" && !!window.storage);
+
+async function loadState(){
+  try{
+    let raw=null;
+    if(hasClaudeStorage){
+      const res=await window.storage.get(STORAGE_KEY,false);
+      if(res && res.value) raw=res.value;
+    } else {
+      raw = localStorage.getItem(STORAGE_KEY);
+    }
+    if(raw){
+      const parsed=JSON.parse(raw);
+      if(!parsed.disabled) parsed.disabled={};
+      if(!parsed.filterMode) parsed.filterMode="all";
+      ITEMS.forEach(it=>{ if(!parsed.items[it.id]) parsed.items[it.id]={stage:0}; });
+      return parsed;
+    }
+  }catch(e){}
+  return defaultState();
+}
+async function saveState(){
+  try{
+    const json=JSON.stringify(state);
+    if(hasClaudeStorage){ await window.storage.set(STORAGE_KEY, json, false); }
+    else { localStorage.setItem(STORAGE_KEY, json); }
+  }
+  catch(e){ console.error("Speichern fehlgeschlagen", e); }
+}
+function isEnabled(id){ return !state.disabled[id]; }
+function passesFilter(it){ return state.filterMode==="marked" ? !!it.x : true; }
+function enabledItems(){ return ITEMS.filter(it=>isEnabled(it.id) && passesFilter(it)); }
+
+function updateStreak(){
+  const today=todayStr();
+  if(state.lastDate===today) return;
+  if(state.lastDate){
+    const diff=(new Date(today)-new Date(state.lastDate))/86400000;
+    state.streak = diff===1 ? state.streak+1 : 1;
+  } else { state.streak=1; }
+  state.lastDate=today;
+  if(state.dailyDate!==today){ state.dailyDate=today; state.dailyCount=0; }
+}
+function shuffle(arr){
+  const a=[...arr];
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+function pickNext(){
+  let pool=enabledItems();
+  if(pool.length===0) return null;
+  if(current && pool.length>1) pool=pool.filter(it=>it.id!==current.id);
+  const weights=pool.map(it=>{
+    const stage=state.items[it.id].stage;
+    return Math.max(4-stage,0.1);
+  });
+  const total=weights.reduce((a,b)=>a+b,0);
+  let r=Math.random()*total;
+  for(let i=0;i<pool.length;i++){ r-=weights[i]; if(r<=0) return pool[i]; }
+  return pool[0];
+}
+function renderModeButtons(){
+  document.getElementById("modeAll").classList.toggle("active", state.filterMode==="all");
+  document.getElementById("modeMarked").classList.toggle("active", state.filterMode==="marked");
+}
+function renderStats(){
+  document.getElementById("statXp").textContent=state.xp;
+  document.getElementById("statStreak").textContent=state.streak;
+  const pool=enabledItems();
+  document.getElementById("statTotal").textContent=pool.length;
+  let n=0,l=0,m=0,im=0;
+  pool.forEach(it=>{
+    const st=state.items[it.id].stage;
+    if(st===0)n++; else if(st===1)l++; else if(st===2)m++; else im++;
+  });
+  document.getElementById("cNeu").textContent=n;
+  document.getElementById("cLearned").textContent=l;
+  document.getElementById("cMastered").textContent=m;
+  document.getElementById("cImmortal").textContent=im;
+}
+function renderDossier(filter){
+  const box=document.getElementById("dossier");
+  box.innerHTML="";
+  const f=(filter||"").toLowerCase();
+  ITEMS.forEach(it=>{
+    if(f && !it.n.toLowerCase().includes(f) && !(it.ph||it.p||"").toLowerCase().includes(f)) return;
+    const st=state.items[it.id].stage;
+    const labels=["NEU","GELERNT","GEMEISTERT","UNSTERBLICH"];
+    const row=document.createElement("div");
+    row.className="dossier-item";
+    const checked=isEnabled(it.id)?"checked":"";
+    const xflag = it.x ? '<span class="xmark">✗</span>' : '';
+    row.innerHTML=`<input type="checkbox" data-id="${it.id}" ${checked}>
+      <span class="txt">${xflag}${it.n}<small>${(it.ph||it.p||"")}</small></span>
+      <span class="badge b${st}">${labels[st]}</span>`;
+    box.appendChild(row);
+  });
+  box.querySelectorAll("input[type=checkbox]").forEach(cb=>{
+    cb.onchange=async ()=>{
+      const id=cb.getAttribute("data-id");
+      if(cb.checked) delete state.disabled[id]; else state.disabled[id]=true;
+      renderStats();
+      await saveState();
+    };
+  });
+}
+
+function renderCard(){
+  answered=false;
+  current=pickNext();
+  const nextBtn=document.getElementById("nextBtn");
+  nextBtn.disabled=true;
+  const optionsBox=document.getElementById("options");
+  optionsBox.innerHTML="";
+  document.getElementById("feedback").innerHTML="";
+
+  if(!current){
+    document.getElementById("cardLabel").textContent="KEINE KARTEN AKTIV";
+    document.getElementById("cardBody").innerHTML='<div class="empty-msg">Wähle unten in der Kartei mindestens eine Karte aus.</div>';
+    return;
+  }
+  const pool=enabledItems();
+  const idx=pool.indexOf(current)+1;
+  const stage=state.items[current.id].stage;
+  const textMode = stage>=2;
+  document.getElementById("cardLabel").textContent=`KARTE ${idx}/${pool.length}${textMode?" · TIPPEN":""}`;
+
+  const phraseSrc = current.p || current.ph || current.n;
+  const blankHTML = '<span class="blank" id="blankSpan">___</span>';
+  let blanked;
+  if(current.i2){
+    const combo1 = current.i+' / '+current.i2;
+    const combo2 = current.i2+' / '+current.i;
+    if(phraseSrc.includes(combo1)) blanked = phraseSrc.replace(combo1, blankHTML);
+    else if(phraseSrc.includes(combo2)) blanked = phraseSrc.replace(combo2, blankHTML);
+    else blanked = phraseSrc.replace(current.i, blankHTML);
+  } else {
+    blanked = phraseSrc.replace(current.i, blankHTML);
+  }
+  document.getElementById("cardBody").innerHTML=
+    `<div class="prompt-noun">${current.n}</div><div class="sentence" id="sentenceEl">${blanked}</div>`;
+  const correctSet = current.i2 ? [current.i, current.i2] : [current.i];
+
+  if(textMode){
+    optionsBox.innerHTML = `<input type="text" id="answerInput" class="answer-input" autocomplete="off" autocapitalize="off" placeholder="Verb eintippen…">
+      <button class="opt check-btn" id="checkBtn">Prüfen</button>`;
+    const input=document.getElementById("answerInput");
+    const submit=()=>{
+      const val=input.value.trim().toLowerCase();
+      const correct = correctSet.some(w=>w.toLowerCase()===val);
+      finishAnswer(correct, val || "(leer)");
+    };
+    document.getElementById("checkBtn").onclick=submit;
+    input.addEventListener("keydown",e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); }});
+    setTimeout(()=>input.focus(),0);
+  } else {
+    const distractorCount = OPTION_COUNT - correctSet.length;
+    const opts=shuffle([...correctSet, ...sampleDistractors(correctSet, distractorCount, current)]);
+    opts.forEach(word=>{
+      const btn=document.createElement("button");
+      btn.className="opt";
+      btn.textContent=word;
+      btn.onclick=()=>handleAnswer(word,btn);
+      optionsBox.appendChild(btn);
+    });
+  }
+}
+
+function handleAnswer(word,btnEl){
+  if(answered || !current) return;
+  const correctSet = current.i2 ? [current.i, current.i2] : [current.i];
+  const correct = correctSet.includes(word);
+  document.querySelectorAll(".opt").forEach(b=>{
+    b.disabled=true;
+    if(correctSet.includes(b.textContent)) b.classList.add("right");
+    else if(b===btnEl) b.classList.add("chosen-wrong");
+    else b.classList.add("dim");
+  });
+  finishAnswer(correct);
+}
+
+async function finishAnswer(correct){
+  if(answered || !current) return;
+  answered=true;
+  const correctSet = current.i2 ? [current.i, current.i2] : [current.i];
+  const blank=document.getElementById("blankSpan");
+  if(blank){
+    blank.textContent=correctSet.join(" / ");
+    blank.classList.add("filled", correct?"correct":"wrong");
+  }
+  const input=document.getElementById("answerInput");
+  const checkBtn=document.getElementById("checkBtn");
+  if(input){
+    input.disabled=true;
+    input.classList.add(correct?"correct":"wrong");
+  }
+  if(checkBtn) checkBtn.disabled=true;
+
+  const it=state.items[current.id];
+  if(correct){
+    it.stage=Math.min(3,it.stage+1);
+    const bonus = state.dailyCount<20 ? 20 : 10;
+    state.xp+=bonus;
+    state.dailyCount++;
+  } else {
+    it.stage=Math.max(0,it.stage-1);
+  }
+
+  const phraseText = current.p || current.ph;
+  document.getElementById("feedback").innerHTML=`<b>${phraseText}</b> — ${current.m}`;
+  document.getElementById("nextBtn").disabled=false;
+
+  renderStats();
+  renderDossier(document.getElementById("searchBox").value);
+  await saveState();
+}
+
+document.getElementById("nextBtn").onclick=renderCard;
+document.getElementById("searchBox").oninput=(e)=>renderDossier(e.target.value);
+document.getElementById("selAll").onclick=async ()=>{ state.disabled={}; renderDossier(document.getElementById("searchBox").value); renderStats(); await saveState(); };
+document.getElementById("selNone").onclick=async ()=>{ ITEMS.forEach(it=>state.disabled[it.id]=true); renderDossier(document.getElementById("searchBox").value); renderStats(); await saveState(); };
+document.getElementById("deselMarked").onclick=async ()=>{ ITEMS.forEach(it=>{ if(it.x) state.disabled[it.id]=true; }); renderDossier(document.getElementById("searchBox").value); renderStats(); await saveState(); };
+document.getElementById("selMarked").onclick=async ()=>{ ITEMS.forEach(it=>{ if(it.x) delete state.disabled[it.id]; }); renderDossier(document.getElementById("searchBox").value); renderStats(); await saveState(); };
+document.getElementById("modeAll").onclick=async ()=>{ state.filterMode="all"; renderModeButtons(); renderStats(); await saveState(); renderCard(); };
+document.getElementById("modeMarked").onclick=async ()=>{ state.filterMode="marked"; renderModeButtons(); renderStats(); await saveState(); renderCard(); };
+document.getElementById("resetBtn").onclick=async ()=>{
+  if(!confirm("Fortschritt wirklich zurücksetzen? (Auswahl bleibt erhalten)")) return;
+  const keepDisabled=state.disabled, keepFilter=state.filterMode;
+  state=defaultState();
+  state.disabled=keepDisabled; state.filterMode=keepFilter;
+  updateStreak();
+  await saveState();
+  renderStats(); renderModeButtons(); renderDossier(); renderCard();
+};
+
+(async function init(){
+  state=await loadState();
+  updateStreak();
+  await saveState();
+  renderStats();
+  renderModeButtons();
+  renderDossier();
+  renderCard();
+  if("serviceWorker" in navigator){
+    navigator.serviceWorker.register("sw.js").catch(()=>{});
+  }
+})();
+</script>
+</body>
+</html>
